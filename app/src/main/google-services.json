@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "817362566965",
+    "project_id": "sos-admin-3d4ca",
+    "storage_bucket": "sos-admin-3d4ca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:817362566965:android:af9ca60e31b18b3803d67c",
+        "android_client_info": {
+          "package_name": "com.example.sos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDlllAQrnUTlmYWzdXDgCRUoWHD_l1QU-E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SOS Admin – Sign in</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-6">
+  <div class="w-full max-w-md">
+    <div class="bg-white rounded-2xl shadow p-8">
+      <h1 class="text-2xl font-semibold text-slate-900">Sign in</h1>
+      <p class="text-slate-500 mt-1">Use your admin email & password.</p>
+
+      <form id="form" class="mt-6 space-y-4">
+        <input id="email" type="email" placeholder="admin@sos.com"
+               class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-slate-900" required />
+        <input id="password" type="password" placeholder="password"
+               class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-slate-900" required />
+        <button class="w-full rounded-xl bg-slate-900 text-white py-3 hover:bg-black transition">Sign In</button>
+      </form>
+
+      <p id="err" class="text-rose-600 text-sm mt-4 hidden"></p>
+    </div>
+    <p class="text-center text-xs text-slate-400 mt-6">SOS Admin</p>
+  </div>
+
+  <script type="module">
+    import { auth } from "./firebase.js";
+    import { signInWithEmailAndPassword, onAuthStateChanged }
+      from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+
+    const form = document.getElementById("form");
+    const email = document.getElementById("email");
+    const password = document.getElementById("password");
+    const err = document.getElementById("err");
+
+    onAuthStateChanged(auth, (user) => { if (user) location.replace("./dashboard.html"); });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      err.classList.add("hidden");
+      try {
+        await signInWithEmailAndPassword(auth, email.value, password.value);
+        location.replace("./dashboard.html");
+      } catch (e2) {
+        err.textContent = e2.message;
+        err.classList.remove("hidden");
+      }
+    });
+  </script>
+</body>
+</html>

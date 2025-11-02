@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SOS — Admin Alerts</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen p-6">
+  <header class="max-w-6xl mx-auto mb-6 flex items-center justify-between">
+    <h1 class="text-3xl font-bold text-slate-900">SOS — Admin Alerts</h1>
+    <div class="flex items-center gap-3">
+      <span id="who" class="text-slate-600 text-sm"></span>
+      <button id="logout" class="rounded-xl bg-white border px-4 py-2 hover:bg-slate-100">Sign Out</button>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto space-y-6">
+    <section class="bg-white rounded-2xl shadow">
+      <div class="px-6 py-4 border-b flex items-center justify-between">
+        <h2 class="text-lg font-semibold">Live Alerts</h2>
+        <button id="refresh" class="rounded-xl bg-white border px-3 py-2 hover:bg-slate-100">Refresh</button>
+      </div>
+      <div class="overflow-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-slate-500">
+            <tr>
+              <th class="text-left px-6 py-3">Time</th>
+              <th class="text-left px-6 py-3">Type</th>
+              <th class="text-left px-6 py-3">Status</th>
+              <th class="text-left px-6 py-3">Location</th>
+              <th class="text-left px-6 py-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rows" class="divide-y"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { auth, db } from "./firebase.js";
+    import { onAuthStateChanged, signOut }
+      from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+    import { collection, orderBy, query, onSnapshot, getDocs, doc, updateDoc }
+      from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const who = document.getElementById("who");
+    const rows = document.getElementById("rows");
+    const logoutBtn = document.getElementById("logout");
+    const refreshBtn = document.getElementById("refresh");
+
+    const fmt = (ms) => new Date(ms).toLocaleString();
+    const pill = (s) => {
+      const cls = s === "solved" ? "bg-emerald-50 text-emerald-700"
+               : s === "acknowledged" ? "bg-cyan-50 text-cyan-700"
+               : "bg-amber-50 text-amber-700";
+      return `<span class="px-2.5 py-1 rounded-full ${cls}">${s}</span>`;
+    };
+    const maps = (lat,lng) => (typeof lat==="number" && typeof lng==="number")
+      ? `<div class="space-y-1">
+           <div>${lat.toFixed(5)}, ${lng.toFixed(5)}</div>
+           <a class="text-indigo-600 hover:underline" target="_blank" rel="noopener"
+              href="https://maps.google.com/?q=${lat},${lng}">Open in Maps</a>
+         </div>` : "—";
+
+    async function setStatus(id, status) { await updateDoc(doc(db, "alerts", id), { status }); }
+    function draw(data) {
+      rows.innerHTML = data.map(r => `
+        <tr class="bg-white">
+          <td class="px-6 py-4">${fmt(r.createdAt ?? 0)}</td>
+          <td class="px-6 py-4">${r.type ?? ""}</td>
+          <td class="px-6 py-4">${pill(r.status ?? "pending")}</td>
+          <td class="px-6 py-4">${maps(r.lat, r.lng)}</td>
+          <td class="px-6 py-4">
+            <div class="flex gap-2">
+              <button class="rounded-xl bg-slate-900 text-white px-3 py-1.5" onclick="setStatus('${r.id}','acknowledged')">Acknowledge</button>
+              <button class="rounded-xl bg-slate-900 text-white px-3 py-1.5" onclick="setStatus('${r.id}','solved')">Solved</button>
+              <button class="rounded-xl bg-white border px-3 py-1.5" onclick="setStatus('${r.id}','pending')">Pending</button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) { location.replace("./login.html"); return; }
+      who.textContent = user.email;
+
+      const q = query(collection(db, "alerts"), orderBy("createdAt", "desc"));
+      onSnapshot(q, snap => draw(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+
+      refreshBtn.addEventListener("click", async () => {
+        const snap = await getDocs(q);
+        draw(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      });
+    });
+
+    logoutBtn.addEventListener("click", () => signOut(auth));
+    window.setStatus = setStatus; // for inline onclick
+  </script>
+</body>
+</html>
